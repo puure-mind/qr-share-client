@@ -1,15 +1,10 @@
 import React, { ReactElement } from 'react';
 import { TimerView } from './Components/TimerView';
-import Timer from './Components/Timer';
-import { Helmet } from 'react-helmet';
-
-const myTimer: Timer = new Timer();
+import { Helmet } from 'react-helmet-async';
+import timer from './store/Timer';
+import { Box, Container } from '@mui/material';
 
 const Title = 'QrShare';
-
-setInterval(() => {
-  myTimer.increase();
-}, 1000);
 
 const App: React.FC = (): ReactElement => {
   return (
@@ -17,9 +12,11 @@ const App: React.FC = (): ReactElement => {
       <Helmet>
         <title>{Title}</title>
       </Helmet>
-      <div className='App'>
-        <TimerView timer={myTimer} />
-      </div>
+      <Container maxWidth='xl' disableGutters>
+        <Box sx={{ backgroundColor: 'primary.light' }}>
+          <TimerView timer={timer} />
+        </Box>
+      </Container>
     </>
   );
 };

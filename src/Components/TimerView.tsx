@@ -1,9 +1,9 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import Timer from './Timer';
+import Timer from '../store/Timer';
 
 interface Props {
-  timer: Timer;
+  timer: typeof Timer;
 }
 
 export const TimerView = observer<Props>(({ timer }) => {
