@@ -1,8 +1,11 @@
 import React, { ReactElement } from 'react';
 import { TimerView } from './Components/TimerView';
 import Timer from './Components/Timer';
+import { Helmet } from 'react-helmet';
 
 const myTimer: Timer = new Timer();
+
+const Title = 'QrShare';
 
 setInterval(() => {
   myTimer.increase();
@@ -10,9 +13,14 @@ setInterval(() => {
 
 const App: React.FC = (): ReactElement => {
   return (
-    <div className='App'>
-      <TimerView timer={myTimer} />
-    </div>
+    <>
+      <Helmet>
+        <title>{Title}</title>
+      </Helmet>
+      <div className='App'>
+        <TimerView timer={myTimer} />
+      </div>
+    </>
   );
 };
 
