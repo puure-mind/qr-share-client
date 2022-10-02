@@ -1,7 +1,17 @@
 import React, { ReactElement } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Box, Card, CardMedia, Container } from '@mui/material';
-
+import {
+  Box,
+  Button,
+  Card,
+  CardActions,
+  CardContent,
+  CardMedia,
+  Container,
+  Typography,
+} from '@mui/material';
+import { Link, BrowserRouter as Router } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 const Title = 'QrShare';
 
 const App: React.FC = (): ReactElement => {
@@ -10,32 +20,72 @@ const App: React.FC = (): ReactElement => {
       <Helmet>
         <title>{Title}</title>
       </Helmet>
-      <Container maxWidth='xl' disableGutters sx={{ height: '100vh' }}>
-        <Box
+      <Router>
+        <Container
+          maxWidth={false}
+          disableGutters
           sx={{
+            height: '100vh',
             backgroundColor: 'primary.main',
-            width: '100%',
-            height: '100%',
             display: 'flex',
-            justifyContent: 'center',
             alignItems: 'center',
+            justifyContent: 'center',
           }}
         >
-          <Card
-            raised
+          <Box
             sx={{
-              p: 1,
-              boxSizing: 'border-box',
               width: 0.5,
-              height: 0.5,
-              '&': { borderRadius: '20px' },
+              height: 0.7,
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
             }}
           >
-            <CardMedia component='img' height='140' image='' />
-          </Card>
-          {/* <TimerView timer={timer} /> */}
-        </Box>
-      </Container>
+            <Card
+              raised
+              sx={{
+                p: 1,
+                width: 1,
+                height: 1,
+                display: 'flex',
+                flexFlow: 'column',
+                justifyContent: 'center',
+                '&': { borderRadius: '20px' },
+              }}
+            >
+              <CardMedia
+                component='div'
+                sx={{ flexGrow: 0.7, pt: 1, width: 1, height: 0.7 }}
+              >
+                <QRCodeSVG
+                  value='https://socket.io/docs/v4/'
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                  }}
+                />
+              </CardMedia>
+              <CardContent sx={{ flexGrow: 0.1 }}>
+                <Typography variant='h4' textAlign='center'>
+                  personal link:{' '}
+                  <Link to='socket.io/docs/v4/'>socket.io/docs/v4/</Link>
+                </Typography>
+              </CardContent>
+              <CardActions
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  flexGrow: 0.2,
+                }}
+              >
+                <Button size='large' variant='contained'>
+                  Go
+                </Button>
+              </CardActions>
+            </Card>
+          </Box>
+        </Container>
+      </Router>
     </>
   );
 };
