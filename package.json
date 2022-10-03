@@ -17,6 +17,7 @@
     "@types/react-dom": "^18.0.0",
     "@types/react-helmet": "^6.1.5",
     "@types/react-router-dom": "^5.3.3",
+    "@types/socket.io-client": "^3.0.0",
     "axios": "^0.27.2",
     "mobx": "^6.6.2",
     "mobx-react-lite": "^3.4.0",
