@@ -6,7 +6,7 @@ type SocketStatus = 'connected' | 'disconnected';
 
 export class TransportLayer {
   rootStore: RootStore;
-  socket = io();
+  socket = io('localhost:5005');
   socketStatus: SocketStatus = 'disconnected';
   pong = '';
 
@@ -15,7 +15,6 @@ export class TransportLayer {
     makeAutoObservable(this, {
       rootStore: false,
       subscribeSocket: false,
-      setAnswer: false,
     });
 
     this.subscribeSocket();
@@ -24,6 +23,7 @@ export class TransportLayer {
   subscribeSocket = (): void => {
     this.socket.on('connect', () => {
       this.socketStatus = 'connected';
+      this.rootStore.setPrivateLink(this.socket.id);
     });
 
     this.socket.on('disconnect', () => {
@@ -37,9 +37,10 @@ export class TransportLayer {
 
   setAnswer = (data: string): void => {
     this.pong = data;
+    console.log(data);
   };
 
   sendOffer = (): void => {
-    this.socket.emit('ping');
+    this.socket.emit('ping', 'ping');
   };
 }

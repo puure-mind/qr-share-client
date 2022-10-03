@@ -9,19 +9,19 @@ export class RootStore {
     makeAutoObservable(this);
   }
 
-  setLink(link: string): void {
-    this.link = link;
+  get privateLink(): string {
+    return this.link;
   }
 
   refreshLink(): void {
-    this.setLink(Math.floor(Math.random() * 10).toString());
+    // this.setLink(Math.floor(Math.random() * 10).toString());
   }
 
   testConnection = (): void => {
     this.transportLayer.sendOffer();
   };
 
-  get connectionAnswer(): string {
-    return this.transportLayer.pong;
-  }
+  setPrivateLink = (privateLink: string): void => {
+    this.link = privateLink;
+  };
 }

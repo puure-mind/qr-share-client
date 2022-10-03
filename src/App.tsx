@@ -21,14 +21,15 @@ const Title = 'QrShare';
 const App: React.FC = observer(() => {
   const navigate = useNavigate();
   const rootStore = useContext<RootStore>(RootStoreContext);
+  const signalingLink = `signaling?id=${rootStore.privateLink}`;
 
   const refreshLink = (): void => {
     rootStore.refreshLink();
   };
 
   const goToLink = (): void => {
-    navigate(rootStore.link);
     rootStore.testConnection();
+    navigate(signalingLink);
   };
 
   return (
@@ -74,7 +75,7 @@ const App: React.FC = observer(() => {
               sx={{ flexGrow: 0.7, pt: 1, width: 1, height: 0.7 }}
             >
               <QRCodeSVG
-                value={rootStore.link}
+                value={signalingLink}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -84,9 +85,8 @@ const App: React.FC = observer(() => {
             <CardContent sx={{ flexGrow: 0.1 }}>
               <Typography variant='h4' textAlign='center'>
                 personal link:
-                <Link to={rootStore.link}>{rootStore.link}</Link>
+                <Link to={signalingLink}>{rootStore.privateLink}</Link>
               </Typography>
-              <Typography>{rootStore.connectionAnswer}</Typography>
             </CardContent>
             <CardActions
               sx={{
