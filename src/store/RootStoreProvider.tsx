@@ -1,14 +1,22 @@
 import React, { createContext } from 'react';
 import { RootStore } from './rootStore';
+import { SignalingModule } from './modules/signaling/SignalingModule';
 
-const RootStoreContext = createContext<RootStore>(new RootStore());
+export type RootContext = RootStore | null;
+
+// DI
+const signalingModule = new SignalingModule();
+const rootStore = new RootStore(signalingModule);
+//
 
 interface Props {
   children: JSX.Element;
 }
 
+const RootStoreContext = createContext<RootContext>(null);
+
 export const RootStoreProvider: React.FC<Props> = ({ children }) => (
-  <RootStoreContext.Provider value={new RootStore()}>
+  <RootStoreContext.Provider value={rootStore}>
     {children}
   </RootStoreContext.Provider>
 );

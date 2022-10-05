@@ -1,27 +1,39 @@
 import { makeAutoObservable } from 'mobx';
-import { TransportLayer } from './modules/transport/transportLayer';
+import {
+  SignalingModule,
+  signalingStatus,
+} from './modules/signaling/SignalingModule';
 
 export class RootStore {
-  link = '';
-  transportLayer: TransportLayer = new TransportLayer(this);
+  signalingModule: SignalingModule;
 
-  constructor() {
+  constructor(signalingModule: SignalingModule) {
     makeAutoObservable(this);
+
+    this.signalingModule = signalingModule;
   }
 
-  get privateLink(): string {
-    return this.link;
+  get signalingStatus(): signalingStatus {
+    return this.signalingModule.getStatus;
   }
 
-  refreshLink(): void {
-    // this.setLink(Math.floor(Math.random() * 10).toString());
+  get receiveLink(): string {
+    return this.signalingModule.getOwnSocketId;
   }
 
-  testConnection = (): void => {
-    this.transportLayer.sendOffer();
+  createReceiveLink = (): void => {
+    this.signalingModule.connect();
   };
 
-  setPrivateLink = (privateLink: string): void => {
-    this.link = privateLink;
+  connectToReceiver = (receiverLink: string): void => {
+    this.signalingModule.connectToRemote(receiverLink);
+  };
+
+  sendMessage = (message: string): void => {
+    this.signalingModule.sendToRemote(message);
+  };
+
+  disconnectSignaling = (): void => {
+    this.signalingModule.disconnectSignaling();
   };
 }
