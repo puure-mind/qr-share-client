@@ -27,6 +27,8 @@ export const ReceiverView: React.FC = observer(() => {
     rootStore.createReceiveLink();
     console.log('receiveLink created');
 
+    rootStore.waitInvite();
+
     return () => {
       rootStore.disconnectSignaling();
     };

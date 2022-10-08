@@ -13,5 +13,7 @@ export const getRtcServers = (): RtcServers => {
     turn = { ...turn, ...JSON.parse(turnCredentials) };
   }
 
+  console.log([{ urls: 'stun:stun.l.google.com:19302' }, { ...turn }]);
+
   return [{ urls: 'stun:stun.l.google.com:19302' }, { ...turn }];
 };

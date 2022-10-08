@@ -3,14 +3,17 @@ import {
   SignalingModule,
   signalingStatus,
 } from './modules/signaling/SignalingModule';
+import { RtcModule } from './modules/rtc/RtcModule';
 
 export class RootStore {
   signalingModule: SignalingModule;
+  rtcModule: RtcModule;
 
-  constructor(signalingModule: SignalingModule) {
+  constructor(signalingModule: SignalingModule, rtcModule: RtcModule) {
     makeAutoObservable(this);
 
     this.signalingModule = signalingModule;
+    this.rtcModule = rtcModule;
   }
 
   get signalingStatus(): signalingStatus {
@@ -35,5 +38,13 @@ export class RootStore {
 
   disconnectSignaling = (): void => {
     this.signalingModule.disconnectSignaling();
+  };
+
+  sendInvite = (): void => {
+    void this.rtcModule.sendInvite();
+  };
+
+  waitInvite = (): void => {
+    this.rtcModule.waitInvite();
   };
 }

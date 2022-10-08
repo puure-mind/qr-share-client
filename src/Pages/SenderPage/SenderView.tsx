@@ -22,10 +22,15 @@ export const SenderView = observer(() => {
     rootStore.sendMessage('hello from sender');
   };
 
+  const rtcConnect = (): void => {
+    rootStore.sendInvite();
+  };
+
   return (
     <>
       <Typography>{receiverId}</Typography>;
       <Button onClick={sendToRemote}>Send msg</Button>
+      <Button onClick={rtcConnect}>RTCConnect</Button>
     </>
   );
 });
