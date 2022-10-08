@@ -54,11 +54,17 @@ export class SignalingModule {
     });
   };
 
-  sendToRemote = (msg: string): void => {
+  sendToRemote = <T>(msg: T): void => {
     console.log('transfer');
     this.ownSocket.emit('msg to socket', {
       receiver: this.remoteSocketId,
       data: msg,
+    });
+  };
+
+  subscribeTo = <T>(eventName: string, fn: (data: T) => void): void => {
+    this.ownSocket.on(eventName, (data: T) => {
+      fn(data);
     });
   };
 
