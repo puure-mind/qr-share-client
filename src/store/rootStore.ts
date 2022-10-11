@@ -41,7 +41,7 @@ export class RootStore {
   };
 
   sendInvite = (): void => {
-    void this.rtcModule.sendInvite();
+    void this.rtcModule.createInvite();
   };
 
   waitInvite = (): void => {

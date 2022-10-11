@@ -1,11 +1,10 @@
-import { getRtcServers } from '../../../config/rtc';
 import { SignalingModule } from '../signaling/SignalingModule';
-import { makeAutoObservable } from 'mobx';
+import { autorun, makeAutoObservable, when } from 'mobx';
+import { RTCSender } from './RTCSender';
+import { RTCReceiver } from './RTCReceiver';
 
 export class RtcModule {
   private readonly signaling;
-  private peer: RTCPeerConnection = new RTCPeerConnection();
-  private channel: RTCDataChannel = this.peer.createDataChannel('init');
 
   constructor(signaling: SignalingModule) {
     this.signaling = signaling;
@@ -13,91 +12,100 @@ export class RtcModule {
     makeAutoObservable(this);
   }
 
-  sendInvite = async (): Promise<void> => {
-    this.peerInit();
+  createInvite = async (): Promise<void> => {
+    const Sender = new RTCSender();
 
-    const sdp: RTCSessionDescriptionInit = await this.peer.createOffer();
-    await this.peer.setLocalDescription(sdp);
+    this.subscribeSender(Sender);
 
-    this.sendSdp(sdp);
-  };
+    when(
+      () => Sender.offer !== null,
+      () => this.sendOffer(Sender.offer),
+    );
 
-  private readonly peerInit = (): void => {
-    this.connect();
-    this.createChannel();
-    this.subscribePeer();
-  };
+    // Sender.sendMsg('test');
 
-  private readonly connect = (): void => {
-    this.peer = new RTCPeerConnection({ iceServers: [...getRtcServers()] });
-    console.log(this.peer.getConfiguration());
-  };
-
-  private readonly createChannel = (): void => {
-    this.channel = this.peer.createDataChannel('files');
-    this.channel.binaryType = 'arraybuffer';
-    this.channel.onopen = this.onChannelOpen;
-    this.channel.onmessage = this.onChannelMessage;
-    this.channel.onclose = this.onChannelClose;
-  };
-
-  private readonly onChannelOpen = (): void => {
-    console.log('channel open');
-  };
-
-  private readonly onChannelClose = (): void => {
-    console.log('channel close');
-  };
-
-  private readonly onChannelMessage = (msg: MessageEvent<string>): void => {
-    console.log(msg.data);
-  };
-
-  private readonly sendSdp = (sdp: RTCSessionDescriptionInit): void => {
-    this.signaling.sendToRemote(sdp);
-  };
-
-  private readonly sendCandidate = (candidate: RTCIceCandidate): void => {
-    this.signaling.sendToRemote(candidate);
-  };
-
-  private readonly subscribePeer = (): void => {
-    this.peer.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
-      if (e.candidate != null) {
-        // sendCandidate();
-        console.log(e.candidate);
-        this.sendCandidate(e.candidate);
-      }
-    };
-
-    this.signaling.subscribeTo<RTCSessionDescription>('sdp', (sdp): void => {
-      void this.peer.setRemoteDescription(sdp);
+    autorun(() => {
+      console.log(Sender.channel.readyState);
     });
+  };
+
+  private readonly sendOffer = (
+    offer: RTCSessionDescriptionInit | null,
+  ): void => {
+    this.signaling.sendEventToRemote<RTCSessionDescriptionInit | null>(
+      'offer',
+      offer,
+    );
+  };
+
+  private readonly subscribeSender = (Sender: RTCSender): void => {
+    this.signaling.subscribeTo<RTCSessionDescriptionInit>(
+      'answer',
+      (answer) => {
+        Sender.setAnswer(answer);
+      },
+    );
 
     this.signaling.subscribeTo<RTCIceCandidate>(
       'candidate',
       (candidate): void => {
-        void this.peer.addIceCandidate(candidate);
+        Sender.addIceCandidate(candidate);
+      },
+    );
+
+    Sender.peer.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
+      if (e.candidate != null) {
+        console.log('sender candidates: ', e.candidate);
+        this.signaling.sendEventToRemote('candidate', e.candidate);
+      }
+    };
+  };
+
+  waitInvite = (): void => {
+    this.signaling.subscribeTo<RTCSessionDescriptionInit | null>(
+      'offer',
+      (data) => {
+        if (data != null) void this.acceptInvite(data);
       },
     );
   };
 
-  waitInvite = (): void => {
-    this.signaling.subscribeTo('invite', () => {
-      void this.acceptInvite();
-    });
+  private readonly acceptInvite = async (
+    offer: RTCSessionDescriptionInit,
+  ): Promise<void> => {
+    const Receiver = new RTCReceiver();
+
+    this.subscribeReceiver(Receiver);
+
+    await Receiver.createAnswer(offer);
+
+    when(
+      () => Receiver.answer !== null,
+      () => this.sendAnswer(Receiver.answer),
+    );
   };
 
-  private readonly acceptInvite = async (): Promise<void> => {
-    this.peerInit();
+  private readonly sendAnswer = (
+    answer: RTCSessionDescriptionInit | null,
+  ): void => {
+    this.signaling.sendEventToRemote<RTCSessionDescriptionInit | null>(
+      'answer',
+      answer,
+    );
+  };
 
-    const sdp: RTCSessionDescriptionInit = await this.peer.createAnswer();
-    await this.peer.setLocalDescription(sdp);
-
-    this.peer.ondatachannel = (e: RTCDataChannelEvent): void => {
-      this.channel = e.channel;
+  private readonly subscribeReceiver = (Receiver: RTCReceiver): void => {
+    Receiver.peer.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
+      if (e.candidate != null) {
+        this.signaling.sendEventToRemote('candidate', e.candidate);
+      }
     };
 
-    this.sendSdp(sdp);
+    this.signaling.subscribeTo<RTCIceCandidate>(
+      'candidate',
+      (candidate): void => {
+        void Receiver.addIceCandidate(candidate);
+      },
+    );
   };
 }
