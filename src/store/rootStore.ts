@@ -20,6 +20,10 @@ export class RootStore {
     return this.signalingModule.getStatus;
   }
 
+  get rtcStatus(): string {
+    return this.rtcModule.getStatus;
+  }
+
   get receiveLink(): string {
     return this.signalingModule.getOwnSocketId;
   }

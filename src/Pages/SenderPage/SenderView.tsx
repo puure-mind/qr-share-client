@@ -9,22 +9,31 @@ import {
   CardContent,
   Container,
   TextField,
+  Typography,
 } from '@mui/material';
 import RootStoreContext, { RootContext } from '../../store/RootStoreProvider';
+import { useForm, Controller } from 'react-hook-form';
 
 export const SenderView = observer(() => {
   const [search] = useSearchParams();
   const receiverId = search.get('id');
   const rootStore = useContext<RootContext>(RootStoreContext);
+
+  const { control, getValues } = useForm({
+    defaultValues: {
+      receiver: receiverId,
+      files: [],
+    },
+  });
   if (rootStore === null) return <></>;
 
-  useEffect(() => {
-    const rtcConnect = (): void => {
-      rootStore.sendInvite();
-    };
+  const rtcConnect = (): void => {
+    rootStore.sendInvite();
+  };
 
+  useEffect(() => {
     receiverId !== null && rootStore.connectToReceiver(receiverId);
-    rtcConnect();
+    // rtcConnect();
 
     return () => {
       rootStore.disconnectSignaling();
@@ -35,8 +44,42 @@ export const SenderView = observer(() => {
     rootStore.sendMessage('hello from sender');
   };
 
-  const rtcReconnect = (): void => {
-    // rtcConnect();
+  const reconnect = (): void => {
+    const receiver = getValues('receiver');
+    if (receiver !== null) rootStore.connectToReceiver(receiver);
+
+    rtcConnect();
+  };
+
+  const sendFile = (): void => {
+    const files = getValues('files');
+
+    if (files?.length !== 0) {
+      void parseFile(files[0]);
+    }
+  };
+
+  const parseFile = async (file: File): Promise<void> => {
+    console.log(file);
+    const buffer = await file.arrayBuffer();
+    const bytes = new Int8Array(buffer);
+    console.log(bytes);
+    //
+    receiveFile(bytes);
+  };
+
+  const receiveFile = (bytes: Int8Array): void => {
+    const blob: BlobPart[] = [];
+    blob.push(bytes);
+    const receivedFile = new File(blob, 'received.jpg');
+
+    const downloadUrl = window.URL.createObjectURL(receivedFile);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = receivedFile.name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   return (
@@ -66,6 +109,10 @@ export const SenderView = observer(() => {
           }}
         >
           <CardContent>
+            <Box>
+              <Typography>{rootStore.signalingStatus}</Typography>
+              <Typography>{rootStore.rtcStatus}</Typography>
+            </Box>
             <Box
               sx={{
                 display: 'flex',
@@ -74,16 +121,35 @@ export const SenderView = observer(() => {
                 py: 2,
               }}
             >
-              <TextField
-                label='Receiver Id: '
-                InputLabelProps={{ shrink: true }}
+              <Controller
+                control={control}
+                name='receiver'
+                render={({ field }: { field: any }) => (
+                  <TextField
+                    {...field}
+                    label='Receiver Id: '
+                    InputLabelProps={{ shrink: true }}
+                  />
+                )}
               />
-              <Button onClick={rtcReconnect}>Reconnect</Button>
+              <Button onClick={reconnect}>Reconnect</Button>
             </Box>
-            <TextField type='file' name='file' />
+            <Controller
+              control={control}
+              name='files'
+              render={({ field }: { field: any }) => (
+                <input
+                  type='file'
+                  {...field}
+                  value={field.value.filename}
+                  onChange={(e) => field.onChange(e.target.files)}
+                />
+              )}
+            />
           </CardContent>
           <CardActions>
             <Button onClick={sendToRemote}>Send msg</Button>
+            <Button onClick={sendFile}>Send file</Button>
           </CardActions>
         </Card>
       </Container>

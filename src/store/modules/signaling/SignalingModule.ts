@@ -78,6 +78,8 @@ export class SignalingModule {
   };
 
   disconnectSignaling = (): void => {
+    this.sendEventToRemote('socket closed');
+
     this.ownSocket.disconnect();
     this.changeSignalingStatusTo('disconnected');
 
@@ -86,6 +88,10 @@ export class SignalingModule {
   // private
 
   private readonly connectSocket = (): void => {
+    this.subscribeTo('socket closed', () => {
+      this.disconnectSignaling();
+    });
+
     if (this.ownSocket.connected) {
       this.disconnectSignaling();
     }

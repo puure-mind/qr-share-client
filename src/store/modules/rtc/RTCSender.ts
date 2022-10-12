@@ -7,6 +7,8 @@ export class RTCSender {
 
   channel: RTCDataChannel = this.peer.createDataChannel('init');
 
+  channelStatus = 'init';
+
   constructor() {
     this.peer = new RTCPeerConnection({ iceServers: [...getRtcServers()] });
 
@@ -18,12 +20,16 @@ export class RTCSender {
     makeAutoObservable(this);
   }
 
+  get getChannelStatus(): string {
+    return this.channelStatus;
+  }
+
   setAnswer = (answer: RTCSessionDescriptionInit): void => {
     void this.peer.setRemoteDescription(answer);
   };
 
   addIceCandidate = (candidate: RTCIceCandidate): void => {
-    console.log(candidate);
+    // console.log(candidate);
     void this.peer.addIceCandidate(candidate);
   };
 
@@ -43,15 +49,21 @@ export class RTCSender {
   };
 
   private readonly onChannelOpen = (): void => {
+    this.changeChannelStatus('connected');
     console.log('channel open');
   };
 
   private readonly onChannelClose = (): void => {
+    this.changeChannelStatus('disconnected');
     console.log('channel close');
   };
 
   private readonly onChannelMessage = (msg: MessageEvent<string>): void => {
     console.log(msg.data);
+  };
+
+  private readonly changeChannelStatus = (status: string): void => {
+    this.channelStatus = status;
   };
 
   sendMsg = (test: string): void => {

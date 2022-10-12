@@ -36,6 +36,8 @@ export const ReceiverView: React.FC = observer(() => {
 
   const refreshLink = (): void => {
     rootStore.createReceiveLink();
+
+    rootStore.waitInvite();
   };
 
   const goToLink = (): void => {

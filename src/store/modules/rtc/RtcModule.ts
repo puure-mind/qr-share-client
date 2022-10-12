@@ -1,32 +1,36 @@
 import { SignalingModule } from '../signaling/SignalingModule';
-import { autorun, makeAutoObservable, when } from 'mobx';
+import { makeAutoObservable, when } from 'mobx';
 import { RTCSender } from './RTCSender';
 import { RTCReceiver } from './RTCReceiver';
 
 export class RtcModule {
   private readonly signaling;
+  private Sender: RTCSender;
+  private Receiver: RTCReceiver;
 
   constructor(signaling: SignalingModule) {
     this.signaling = signaling;
+    this.Sender = new RTCSender();
+    this.Receiver = new RTCReceiver();
 
     makeAutoObservable(this);
   }
 
-  createInvite = async (): Promise<void> => {
-    const Sender = new RTCSender();
+  get getStatus(): string {
+    return 'rtcConnect';
+  }
 
-    this.subscribeSender(Sender);
+  createInvite = async (): Promise<void> => {
+    this.Sender = new RTCSender();
+
+    this.subscribeSender(this.Sender);
 
     when(
-      () => Sender.offer !== null,
-      () => this.sendOffer(Sender.offer),
+      () => this.Sender.offer !== null,
+      () => {
+        this.sendOffer(this.Sender.offer);
+      },
     );
-
-    // Sender.sendMsg('test');
-
-    autorun(() => {
-      console.log(Sender.channel.readyState);
-    });
   };
 
   private readonly sendOffer = (
@@ -55,7 +59,7 @@ export class RtcModule {
 
     Sender.peer.onicecandidate = (e: RTCPeerConnectionIceEvent) => {
       if (e.candidate != null) {
-        console.log('sender candidates: ', e.candidate);
+        // console.log('sender candidates: ', e.candidate);
         this.signaling.sendEventToRemote('candidate', e.candidate);
       }
     };
@@ -73,15 +77,16 @@ export class RtcModule {
   private readonly acceptInvite = async (
     offer: RTCSessionDescriptionInit,
   ): Promise<void> => {
-    const Receiver = new RTCReceiver();
+    // const Receiver = new RTCReceiver();
+    this.Receiver = new RTCReceiver();
 
-    this.subscribeReceiver(Receiver);
+    this.subscribeReceiver(this.Receiver);
 
-    await Receiver.createAnswer(offer);
+    await this.Receiver.createAnswer(offer);
 
     when(
-      () => Receiver.answer !== null,
-      () => this.sendAnswer(Receiver.answer),
+      () => this.Receiver.answer !== null,
+      () => this.sendAnswer(this.Receiver.answer),
     );
   };
 
