@@ -53,33 +53,7 @@ export const SenderView = observer(() => {
 
   const sendFile = (): void => {
     const files = getValues('files');
-
-    if (files?.length !== 0) {
-      void parseFile(files[0]);
-    }
-  };
-
-  const parseFile = async (file: File): Promise<void> => {
-    console.log(file);
-    const buffer = await file.arrayBuffer();
-    const bytes = new Int8Array(buffer);
-    console.log(bytes);
-    //
-    receiveFile(bytes);
-  };
-
-  const receiveFile = (bytes: Int8Array): void => {
-    const blob: BlobPart[] = [];
-    blob.push(bytes);
-    const receivedFile = new File(blob, 'received.jpg');
-
-    const downloadUrl = window.URL.createObjectURL(receivedFile);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = receivedFile.name;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+    rootStore.sendFile(files);
   };
 
   return (

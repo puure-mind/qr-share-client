@@ -1,10 +1,15 @@
 import { getRtcServers } from '../../../config/rtc';
-import { makeAutoObservable } from 'mobx';
+import { autorun, makeAutoObservable, when } from 'mobx';
 
 export class RTCReceiver {
   peer = new RTCPeerConnection();
   answer: RTCSessionDescriptionInit | null = null;
   channel = this.peer.createDataChannel('init');
+
+  downloadUrl = '';
+  fileParams: any = {};
+  chunks: any[] = [];
+  progress = 0;
 
   candidates: RTCIceCandidate[] = [];
 
@@ -25,6 +30,10 @@ export class RTCReceiver {
     };
 
     makeAutoObservable(this);
+  }
+
+  get getProgress(): number {
+    return this.progress;
   }
 
   createAnswer = async (offer: RTCSessionDescriptionInit): Promise<void> => {
@@ -54,6 +63,63 @@ export class RTCReceiver {
   };
 
   private readonly onChannelMessage = (msg: MessageEvent<string>): void => {
-    console.log(msg.data);
+    const { data } = msg;
+    const object = JSON.parse(data);
+    if (object.command === 'start') {
+      this.setFileParams(object.payload);
+      this.chunks = [];
+      this.setProgress(0);
+      console.log(this.fileParams);
+    }
+    if (object.command === 'chunk') {
+      this.chunks = [...this.chunks, ...Object.values(object.payload)];
+      this.setProgress(
+        (this.chunks.length /
+          this.fileParams.chunkSize /
+          this.fileParams.chunksCount) *
+          100,
+      );
+    }
+    if (object.command === 'end') {
+      this.createFile();
+    }
+
+    // this.createFileFromBytes(msg.data);
+  };
+
+  private readonly setProgress = (loaded: number): void => {
+    this.progress = loaded;
+  };
+
+  private readonly setFileParams = (params: object): void => {
+    this.fileParams = params;
+  };
+
+  private readonly createFile = (): void => {
+    const bytesFile: Int8Array = new Int8Array(this.chunks);
+
+    console.log(bytesFile);
+    const blob: BlobPart[] = [];
+    blob.push(bytesFile);
+    const receivedFile = new File(blob, this.fileParams.fileName);
+    console.log(receivedFile);
+    this.setProgress(100);
+  };
+
+  private readonly createFileFromBytes = (bytes: Int8Array): void => {
+    const blob: BlobPart[] = [];
+    blob.push(bytes);
+    const receivedFile = new File(blob, 'received.jpg');
+
+    console.log(receivedFile);
+
+    this.downloadUrl = window.URL.createObjectURL(receivedFile);
+
+    // const link = document.createElement('a');
+    // link.href = downloadUrl;
+    // link.download = receivedFile.name;
+    // document.body.appendChild(link);
+    // link.click();
+    // link.remove();
   };
 }

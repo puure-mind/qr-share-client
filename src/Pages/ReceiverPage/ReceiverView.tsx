@@ -7,6 +7,7 @@ import {
   CardMedia,
   CircularProgress,
   Container,
+  LinearProgress,
   Typography,
 } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
@@ -50,6 +51,8 @@ export const ReceiverView: React.FC = observer(() => {
   const sendToRemote = (): void => {
     rootStore.sendMessage('hello from receiver');
   };
+
+  console.log(rootStore.downloadProgress);
 
   return (
     <>
@@ -104,6 +107,18 @@ export const ReceiverView: React.FC = observer(() => {
                   personal link:
                   <Link to={receiverLink}>{rootStore.receiveLink}</Link>
                 </Typography>
+                {rootStore.downloadLink !== '' && (
+                  <Typography>
+                    download:
+                    <span onClick={rootStore.downloadFile}>download file</span>
+                  </Typography>
+                )}
+                {rootStore.downloadProgress !== 0 && (
+                  <LinearProgress
+                    variant='determinate'
+                    value={rootStore.downloadProgress}
+                  />
+                )}
               </CardContent>
               <CardActions
                 sx={{

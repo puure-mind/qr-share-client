@@ -20,6 +20,14 @@ export class RtcModule {
     return 'rtcConnect';
   }
 
+  get getProgress(): number {
+    return this.Receiver.getProgress;
+  }
+
+  get downloadUrl(): string {
+    return this.Receiver.downloadUrl;
+  }
+
   createInvite = async (): Promise<void> => {
     this.Sender = new RTCSender();
 
@@ -31,6 +39,10 @@ export class RtcModule {
         this.sendOffer(this.Sender.offer);
       },
     );
+  };
+
+  sendBytes = (bytes: Int8Array): void => {
+    this.Sender.sendBytes(bytes);
   };
 
   private readonly sendOffer = (

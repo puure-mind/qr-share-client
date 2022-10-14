@@ -4,16 +4,23 @@ import {
   signalingStatus,
 } from './modules/signaling/SignalingModule';
 import { RtcModule } from './modules/rtc/RtcModule';
+import { FileStore } from './modules/file/fileStore';
 
 export class RootStore {
   signalingModule: SignalingModule;
   rtcModule: RtcModule;
+  fileStore: FileStore;
 
-  constructor(signalingModule: SignalingModule, rtcModule: RtcModule) {
+  constructor(
+    signalingModule: SignalingModule,
+    rtcModule: RtcModule,
+    fileStore: FileStore,
+  ) {
     makeAutoObservable(this);
 
     this.signalingModule = signalingModule;
     this.rtcModule = rtcModule;
+    this.fileStore = fileStore;
   }
 
   get signalingStatus(): signalingStatus {
@@ -26,6 +33,14 @@ export class RootStore {
 
   get receiveLink(): string {
     return this.signalingModule.getOwnSocketId;
+  }
+
+  get downloadLink(): string {
+    return this.rtcModule.downloadUrl;
+  }
+
+  get downloadProgress(): number {
+    return this.rtcModule.getProgress;
   }
 
   createReceiveLink = (): void => {
@@ -50,5 +65,15 @@ export class RootStore {
 
   waitInvite = (): void => {
     this.rtcModule.waitInvite();
+  };
+
+  sendFile = (files: File[]): void => {
+    if (files?.length !== 0) {
+      void this.fileStore.sendFile(files[0], this.rtcModule);
+    }
+  };
+
+  downloadFile = (): void => {
+    this.fileStore.downloadFile(this.downloadLink, 'download.txt');
   };
 }

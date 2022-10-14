@@ -2,13 +2,15 @@ import React, { createContext } from 'react';
 import { RootStore } from './rootStore';
 import { SignalingModule } from './modules/signaling/SignalingModule';
 import { RtcModule } from './modules/rtc/RtcModule';
+import { FileStore } from './modules/file/fileStore';
 
 export type RootContext = RootStore | null;
 
 // DI
 const signalingModule = new SignalingModule();
 const rtcModule = new RtcModule(signalingModule);
-const rootStore = new RootStore(signalingModule, rtcModule);
+const fileStore = new FileStore();
+const rootStore = new RootStore(signalingModule, rtcModule, fileStore);
 //
 
 interface Props {
