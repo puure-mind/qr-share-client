@@ -1,5 +1,5 @@
 import { getRtcServers } from '../../../config/rtc';
-import { makeAutoObservable } from 'mobx';
+import { autorun, makeAutoObservable, when } from 'mobx';
 import internal from 'stream';
 
 export class RTCSender {
@@ -35,11 +35,11 @@ export class RTCSender {
 
   sendBytes = (bytes: Int8Array): void => {
     console.log(bytes);
-    const chunkSize = 10;
+    const chunkSize = 16384;
     const chunks = [];
 
     for (let i = 0; i < bytes.length; i += chunkSize) {
-      const chunk = bytes.slice(i, i + chunkSize);
+      const chunk = { meta: { id: i }, data: bytes.slice(i, i + chunkSize) };
       chunks.push(chunk);
     }
 
@@ -51,6 +51,8 @@ export class RTCSender {
         fileName: 'fileName.txt',
       },
     };
+
+    console.log('meta:', sendedObject);
 
     this.channel.send(JSON.stringify(sendedObject));
 
@@ -64,67 +66,94 @@ export class RTCSender {
 
     // this.sendChunks(chunks);
 
-    this.sendYielded(chunks);
+    // void this.sendYielded(chunks);
+    void this.sendRecurs(chunks);
   };
 
-  *sendYielded(chunks: any[]): Generator<void> {
+  sendRecurs = async (chunks: any[]): Promise<void> => {
     let i = 0;
-    console.log('start: ', i);
+    const fcdc = new FlowControlledDataChannel(this.channel);
+
+    // await this.sendToChannel(fcdc, chunks, 0, chunks.length);
 
     while (i < chunks.length) {
-      if (this.channelIsFull()) {
-        console.log('channel full');
-        yield;
+      await fcdc.readyProm;
+
+      if (fcdc.ready) {
+        fcdc.execute(() => {
+          this.sendChunk(chunks[i]);
+          console.log('sended chunk: ', i);
+          i++;
+        });
       }
-      console.log('channel free');
-      const chunkObject = {
-        command: 'chunk',
-        payload: chunks[i],
-      };
-      this.channel.send(JSON.stringify(chunkObject));
-
-      i++;
-      console.log('end: ', i);
     }
 
+    await fcdc.readyProm;
+
+    fcdc.execute(() => {
+      this.sendEnded();
+    });
+
+    // while (i < chunks.length) {
+    //   if (fcdc.ready) {
+    //     fcdc.execute(() => {
+    //       this.sendChunk(chunks[i]);
+    //     });
+    //     console.log('sended chunk: ', i);
+    //     i++;
+    //   }
+    // }
+  };
+
+  sendToChannel = async (
+    fcdc: FlowControlledDataChannel,
+    chunks: any[],
+    startIndex: number,
+    endIndex: number,
+  ): Promise<void> => {
+    console.log('paused: ', fcdc.paused, ' ready: ', fcdc.ready);
+    if (fcdc.ready) {
+      fcdc.execute(() => {
+        this.sendChunk(chunks[startIndex]);
+      });
+      const nextIndex = startIndex + 1;
+      if (nextIndex < endIndex) {
+        await this.sendToChannel(fcdc, chunks, nextIndex, endIndex);
+      } else {
+        this.sendEnded();
+      }
+    } else {
+      void this.sendToChannel(fcdc, chunks, startIndex, endIndex);
+    }
+  };
+
+  sendEnded = (): void => {
     this.channel.send(JSON.stringify({ command: 'end' }));
-  }
-
-  private readonly channelIsFull = (): boolean => {
-    return (
-      this.channel.bufferedAmount > this.channel.bufferedAmountLowThreshold
-    );
+    console.log('ended');
   };
 
-  private readonly sendChunks = (chunks: any[]): void => {
-    let i = 0;
+  sendChunk = (chunk: any): void => {
+    // await this.freeChannel();
 
-    this.channel.onbufferedamountlow = () => {
-      console.log('full');
-    };
-
-    while (i < chunks.length) {
-      const sendedObject = {
-        command: 'chunk',
-        payload: chunks[i],
-      };
-      this.channel.send(JSON.stringify(sendedObject));
-      i++;
-    }
-    console.log(i);
-  };
-
-  private readonly send = (chunk: Int8Array): void => {
-    if (this.channel.bufferedAmount > 0) {
-      return;
-    }
-
-    const sendedObject = {
+    const chunkObject = {
       command: 'chunk',
       payload: chunk,
     };
 
-    this.channel.send(JSON.stringify(sendedObject));
+    this.channel.send(JSON.stringify(chunkObject));
+    console.log('chunk sended: ', chunkObject);
+  };
+
+  freeChannel = async (): Promise<void> => {
+    return await new Promise((resolve) => {
+      if (
+        this.channel.bufferedAmount > this.channel.bufferedAmountLowThreshold
+      ) {
+        return;
+      }
+      console.log('resolved');
+      resolve();
+    });
   };
 
   private readonly setPeerDescription = (
@@ -159,4 +188,66 @@ export class RTCSender {
   private readonly changeChannelStatus = (status: string): void => {
     this.channelStatus = status;
   };
+}
+
+class FlowControlledDataChannel {
+  dc;
+  paused;
+  ready;
+  highWaterMark;
+  readyProm;
+
+  constructor(
+    dc: RTCDataChannel,
+    lowWaterMark = 262144,
+    highWaterMark = 1048576,
+  ) {
+    makeAutoObservable(this);
+    this.dc = dc;
+    this.paused = false;
+    this.ready = true;
+    this.readyProm = Promise.resolve();
+    this.highWaterMark = highWaterMark;
+
+    // Drain once ready
+    this.dc.bufferedAmountLowThreshold = lowWaterMark;
+    this.dc.onbufferedamountlow = () => {
+      console.log(`buffer event ${this.dc.bufferedAmount}`);
+      // Continue once low water mark has been reached
+      if (this.paused) {
+        console.log(
+          `Data channel ${this.dc.label} resumed @ ${this.dc.bufferedAmount}`,
+        );
+        this.paused = false;
+        this.ready = true;
+        this.readyProm = new Promise<void>((resolve) => {
+          resolve();
+        });
+      }
+    };
+  }
+
+  execute(fn: () => void): void {
+    if (this.paused || !this.ready) {
+      return;
+    }
+
+    fn();
+
+    // Pause once high water mark has been reached
+    if (!this.paused && this.dc.bufferedAmount >= this.highWaterMark) {
+      this.paused = true;
+      this.ready = false;
+      this.readyProm = new Promise<void>((resolve) => {
+        when(
+          () => this.ready,
+          () => setTimeout(() => resolve(), 100),
+        );
+      });
+
+      console.log(
+        `Data channel ${this.dc.label} paused @ ${this.dc.bufferedAmount}`,
+      );
+    }
+  }
 }

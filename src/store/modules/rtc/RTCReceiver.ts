@@ -62,7 +62,9 @@ export class RTCReceiver {
     console.log('channel close');
   };
 
-  private readonly onChannelMessage = (msg: MessageEvent<string>): void => {
+  private readonly onChannelMessage = async (
+    msg: MessageEvent<string>,
+  ): Promise<void> => {
     const { data } = msg;
     const object = JSON.parse(data);
     if (object.command === 'start') {
@@ -72,19 +74,25 @@ export class RTCReceiver {
       console.log(this.fileParams);
     }
     if (object.command === 'chunk') {
-      this.chunks = [...this.chunks, ...Object.values(object.payload)];
-      this.setProgress(
-        (this.chunks.length /
-          this.fileParams.chunkSize /
-          this.fileParams.chunksCount) *
-          100,
-      );
+      await this.receiveChunk(object.payload.data);
     }
     if (object.command === 'end') {
       this.createFile();
     }
 
     // this.createFileFromBytes(msg.data);
+  };
+
+  private readonly receiveChunk = async (chunk: any): Promise<void> => {
+    // this.chunks = [...this.chunks, ...Object.values(chunk)];
+    this.chunks.push(...Object.values(chunk));
+
+    this.setProgress(
+      (this.chunks.length /
+        this.fileParams.chunkSize /
+        this.fileParams.chunksCount) *
+        100,
+    );
   };
 
   private readonly setProgress = (loaded: number): void => {

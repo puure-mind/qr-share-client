@@ -76,4 +76,25 @@ export class RootStore {
   downloadFile = (): void => {
     this.fileStore.downloadFile(this.downloadLink, 'download.txt');
   };
+
+  openDialog = async (): Promise<void> => {
+    console.log('click');
+    const [fileHandle] = await showOpenFilePicker();
+    const data = await fileHandle.getFile();
+    const buffer = await data.arrayBuffer();
+    console.log(buffer);
+
+    this.signalingModule.sendEventToRemote<ArrayBuffer>(
+      'transfer file',
+      buffer,
+    );
+    // await this.saveFile(buffer);
+  };
+
+  waitFile = (): void => {
+    this.signalingModule.subscribeTo<ArrayBuffer>('transfer file', (bytes) => {
+      console.log('event received');
+      this.fileStore.downloadFileFromBytes(new Int8Array(bytes));
+    });
+  };
 }

@@ -30,6 +30,8 @@ export const ReceiverView: React.FC = observer(() => {
 
     rootStore.waitInvite();
 
+    rootStore.waitFile();
+
     return () => {
       rootStore.disconnectSignaling();
     };
@@ -127,7 +129,11 @@ export const ReceiverView: React.FC = observer(() => {
                   flexGrow: 0.2,
                 }}
               >
-                <Button onClick={goToLink} size='large' variant='contained'>
+                <Button
+                  onClick={rootStore.waitFile}
+                  size='large'
+                  variant='contained'
+                >
                   Go
                 </Button>
                 <Button

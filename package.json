@@ -63,6 +63,8 @@
     ]
   },
   "devDependencies": {
+    "@types/filesystem": "^0.0.32",
+    "@types/wicg-file-system-access": "^2020.9.5",
     "@typescript-eslint/eslint-plugin": "^5.0.0",
     "@typescript-eslint/parser": "^5.38.1",
     "dotenv": "^16.0.3",

@@ -124,6 +124,14 @@ export const SenderView = observer(() => {
           <CardActions>
             <Button onClick={sendToRemote}>Send msg</Button>
             <Button onClick={sendFile}>Send file</Button>
+            <Button
+              variant='contained'
+              onClick={() => {
+                void rootStore?.openDialog();
+              }}
+            >
+              open
+            </Button>
           </CardActions>
         </Card>
       </Container>
