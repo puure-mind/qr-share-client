@@ -125,4 +125,8 @@ export class RtcModule {
       },
     );
   };
+
+  saveFile = (): void => {
+    void this.Receiver.createFileHandle();
+  };
 }

@@ -147,6 +147,7 @@ export const ReceiverView: React.FC = observer(() => {
                 <Button onClick={sendToRemote} size='large' variant='contained'>
                   send msg
                 </Button>
+                <Button onClick={rootStore.saveFile}>save</Button>
               </CardActions>
             </Card>
           ) : (

@@ -97,4 +97,8 @@ export class RootStore {
       this.fileStore.downloadFileFromBytes(new Int8Array(bytes));
     });
   };
+
+  saveFile = (): void => {
+    this.rtcModule.saveFile();
+  };
 }

@@ -1,5 +1,7 @@
 import { getRtcServers } from '../../../config/rtc';
 import { autorun, makeAutoObservable, when } from 'mobx';
+import { createElement } from 'react';
+import { Button } from '@mui/material';
 
 export class RTCReceiver {
   peer = new RTCPeerConnection();
@@ -10,6 +12,9 @@ export class RTCReceiver {
   fileParams: any = {};
   chunks: any[] = [];
   progress = 0;
+
+  fileHandle: FileSystemFileHandle | null = null;
+  writer: FileSystemWritableFileStream | null = null;
 
   candidates: RTCIceCandidate[] = [];
 
@@ -35,6 +40,11 @@ export class RTCReceiver {
   get getProgress(): number {
     return this.progress;
   }
+
+  createFileHandle = async (): Promise<void> => {
+    this.fileHandle = await showSaveFilePicker();
+    this.writer = await this.fileHandle.createWritable();
+  };
 
   createAnswer = async (offer: RTCSessionDescriptionInit): Promise<void> => {
     await this.peer.setRemoteDescription(offer);
@@ -74,13 +84,40 @@ export class RTCReceiver {
       console.log(this.fileParams);
     }
     if (object.command === 'chunk') {
-      await this.receiveChunk(object.payload.data);
+      // await this.receiveChunk(object.payload.data);
+      if (this.writer !== null) {
+        await this.writeChunkToFile(this.writer, object.payload.data);
+      }
     }
     if (object.command === 'end') {
-      this.createFile();
+      // this.createFile();
+      if (this.writer !== null && this.fileHandle !== null) {
+        await this.closeFile(this.writer, this.fileHandle);
+      }
     }
 
     // this.createFileFromBytes(msg.data);
+  };
+
+  private readonly writeChunkToFile = async (
+    writer: FileSystemWritableFileStream,
+    chunk: any,
+  ): Promise<void> => {
+    console.log(chunk);
+    const buffer = new Int8Array(Object.values(chunk));
+    await writer.write(buffer);
+    console.log('writed');
+  };
+
+  private readonly closeFile = async (
+    writer: FileSystemWritableFileStream,
+    handle: FileSystemFileHandle,
+  ): Promise<void> => {
+    await writer.close();
+    const file = await handle.getFile();
+
+    console.log(handle);
+    console.log(file);
   };
 
   private readonly receiveChunk = async (chunk: any): Promise<void> => {
