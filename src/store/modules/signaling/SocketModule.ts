@@ -87,8 +87,14 @@ export class SocketModule implements ITransportLayer {
   // private
 
   private readonly connectSocket = (): void => {
-    this.subscribeTo('socket closed', () => {
+    if (this.ownSocket.connected) {
       this.disconnect();
+    }
+    this.ownSocket?.connect();
+
+    this.subscribeTo('socket closed', () => {
+      // this.disconnect();
+      this.changeStatusTo('waitOther');
     });
 
     this.subscribeTo('connect', () => {
@@ -105,11 +111,6 @@ export class SocketModule implements ITransportLayer {
       //   this.ownSocket?.connect();
       // }, 5000);
     });
-
-    if (this.ownSocket.connected) {
-      this.disconnect();
-    }
-    this.ownSocket?.connect();
 
     this.subscribeTo('msg to socket', (data) => {
       console.log(data);
