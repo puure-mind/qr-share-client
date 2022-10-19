@@ -88,7 +88,6 @@ export class RootStore {
       'transfer file',
       buffer,
     );
-    // await this.saveFile(buffer);
   };
 
   waitFile = (): void => {

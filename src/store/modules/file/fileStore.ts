@@ -13,22 +13,6 @@ export class FileStore {
     return bytes;
   };
 
-  createFileLinkFromBytes = (bytes: Int8Array): void => {
-    const blob: BlobPart[] = [];
-    blob.push(bytes);
-    const receivedFile = new File(blob, 'received.jpg');
-
-    console.log(receivedFile);
-
-    // const downloadUrl = window.URL.createObjectURL(receivedFile);
-    // const link = document.createElement('a');
-    // link.href = downloadUrl;
-    // link.download = receivedFile.name;
-    // document.body.appendChild(link);
-    // link.click();
-    // link.remove();
-  };
-
   downloadFileFromBytes = (bytes: Int8Array): void => {
     const blob: BlobPart[] = [];
     blob.push(bytes);

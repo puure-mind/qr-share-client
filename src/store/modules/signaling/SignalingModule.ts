@@ -106,7 +106,6 @@ export class SignalingModule {
 
     this.ownSocket.on('disconnect', () => {
       this.changeSignalingStatusTo('disconnected');
-      // this.status = 'disconnected';
 
       setTimeout(() => {
         this.ownSocket?.connect();

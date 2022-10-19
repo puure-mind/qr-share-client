@@ -89,7 +89,6 @@ export class RtcModule {
   private readonly acceptInvite = async (
     offer: RTCSessionDescriptionInit,
   ): Promise<void> => {
-    // const Receiver = new RTCReceiver();
     this.Receiver = new RTCReceiver();
 
     this.subscribeReceiver(this.Receiver);

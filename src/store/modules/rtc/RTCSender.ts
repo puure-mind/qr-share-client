@@ -1,6 +1,5 @@
 import { getRtcServers } from '../../../config/rtc';
-import { autorun, makeAutoObservable, when } from 'mobx';
-import internal from 'stream';
+import { makeAutoObservable, when } from 'mobx';
 
 export class RTCSender {
   peer = new RTCPeerConnection();
@@ -19,10 +18,6 @@ export class RTCSender {
     });
 
     makeAutoObservable(this);
-  }
-
-  get getChannelStatus(): string {
-    return this.channelStatus;
   }
 
   setAnswer = (answer: RTCSessionDescriptionInit): void => {
@@ -56,25 +51,12 @@ export class RTCSender {
 
     this.channel.send(JSON.stringify(sendedObject));
 
-    // chunks.forEach((chunk) => {
-    //   const chunkObject = {
-    //     command: 'chunk',
-    //     payload: chunk,
-    //   };
-    //   this.channel.send(JSON.stringify(chunkObject));
-    // });
-
-    // this.sendChunks(chunks);
-
-    // void this.sendYielded(chunks);
     void this.sendRecurs(chunks);
   };
 
   sendRecurs = async (chunks: any[]): Promise<void> => {
     let i = 0;
     const fcdc = new FlowControlledDataChannel(this.channel);
-
-    // await this.sendToChannel(fcdc, chunks, 0, chunks.length);
 
     while (i < chunks.length) {
       await fcdc.readyProm;
@@ -93,16 +75,6 @@ export class RTCSender {
     fcdc.execute(() => {
       this.sendEnded();
     });
-
-    // while (i < chunks.length) {
-    //   if (fcdc.ready) {
-    //     fcdc.execute(() => {
-    //       this.sendChunk(chunks[i]);
-    //     });
-    //     console.log('sended chunk: ', i);
-    //     i++;
-    //   }
-    // }
   };
 
   sendToChannel = async (
@@ -133,8 +105,6 @@ export class RTCSender {
   };
 
   sendChunk = (chunk: any): void => {
-    // await this.freeChannel();
-
     const chunkObject = {
       command: 'chunk',
       payload: chunk,
@@ -142,18 +112,6 @@ export class RTCSender {
 
     this.channel.send(JSON.stringify(chunkObject));
     console.log('chunk sended: ', chunkObject);
-  };
-
-  freeChannel = async (): Promise<void> => {
-    return await new Promise((resolve) => {
-      if (
-        this.channel.bufferedAmount > this.channel.bufferedAmountLowThreshold
-      ) {
-        return;
-      }
-      console.log('resolved');
-      resolve();
-    });
   };
 
   private readonly setPeerDescription = (

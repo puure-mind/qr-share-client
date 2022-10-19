@@ -1,7 +1,5 @@
 import { getRtcServers } from '../../../config/rtc';
-import { autorun, makeAutoObservable, when } from 'mobx';
-import { createElement } from 'react';
-import { Button } from '@mui/material';
+import { makeAutoObservable } from 'mobx';
 
 export class RTCReceiver {
   peer = new RTCPeerConnection();
@@ -84,19 +82,15 @@ export class RTCReceiver {
       console.log(this.fileParams);
     }
     if (object.command === 'chunk') {
-      // await this.receiveChunk(object.payload.data);
       if (this.writer !== null) {
         await this.writeChunkToFile(this.writer, object.payload.data);
       }
     }
     if (object.command === 'end') {
-      // this.createFile();
       if (this.writer !== null && this.fileHandle !== null) {
         await this.closeFile(this.writer, this.fileHandle);
       }
     }
-
-    // this.createFileFromBytes(msg.data);
   };
 
   private readonly writeChunkToFile = async (
@@ -120,51 +114,11 @@ export class RTCReceiver {
     console.log(file);
   };
 
-  private readonly receiveChunk = async (chunk: any): Promise<void> => {
-    // this.chunks = [...this.chunks, ...Object.values(chunk)];
-    this.chunks.push(...Object.values(chunk));
-
-    this.setProgress(
-      (this.chunks.length /
-        this.fileParams.chunkSize /
-        this.fileParams.chunksCount) *
-        100,
-    );
-  };
-
   private readonly setProgress = (loaded: number): void => {
     this.progress = loaded;
   };
 
   private readonly setFileParams = (params: object): void => {
     this.fileParams = params;
-  };
-
-  private readonly createFile = (): void => {
-    const bytesFile: Int8Array = new Int8Array(this.chunks);
-
-    console.log(bytesFile);
-    const blob: BlobPart[] = [];
-    blob.push(bytesFile);
-    const receivedFile = new File(blob, this.fileParams.fileName);
-    console.log(receivedFile);
-    this.setProgress(100);
-  };
-
-  private readonly createFileFromBytes = (bytes: Int8Array): void => {
-    const blob: BlobPart[] = [];
-    blob.push(bytes);
-    const receivedFile = new File(blob, 'received.jpg');
-
-    console.log(receivedFile);
-
-    this.downloadUrl = window.URL.createObjectURL(receivedFile);
-
-    // const link = document.createElement('a');
-    // link.href = downloadUrl;
-    // link.download = receivedFile.name;
-    // document.body.appendChild(link);
-    // link.click();
-    // link.remove();
   };
 }
