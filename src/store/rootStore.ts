@@ -1,30 +1,42 @@
 import { makeAutoObservable } from 'mobx';
 import {
-  SignalingModule,
+  SocketModule,
   signalingStatus,
-} from './modules/signaling/SignalingModule';
+} from './modules/signaling/SocketModule';
 import { RtcModule } from './modules/rtc/RtcModule';
 import { FileStore } from './modules/file/fileStore';
+import { SenderCreator } from './modules/sender/SenderCreator';
+import { ReceiverCreator } from './modules/receiver/ReceiverCreator';
+import { IReceiver } from './modules/receiver/Receiver';
+import { ISender } from './modules/sender/Sender';
 
 export class RootStore {
-  signalingModule: SignalingModule;
   rtcModule: RtcModule;
   fileStore: FileStore;
 
+  signalingModule: SocketModule;
+  sender: ISender;
+  receiver: IReceiver;
+
   constructor(
-    signalingModule: SignalingModule,
+    signalingModule: SocketModule,
     rtcModule: RtcModule,
     fileStore: FileStore,
+    senderCreator: SenderCreator,
+    receiverCreator: ReceiverCreator,
   ) {
     makeAutoObservable(this);
 
     this.signalingModule = signalingModule;
     this.rtcModule = rtcModule;
     this.fileStore = fileStore;
+
+    this.sender = senderCreator.createSender(this.rtcModule);
+    this.receiver = receiverCreator.createReceiver(this.rtcModule);
   }
 
   get signalingStatus(): signalingStatus {
-    return this.signalingModule.getStatus;
+    return this.signalingModule.getCurrentStatus;
   }
 
   get rtcStatus(): string {
@@ -32,7 +44,8 @@ export class RootStore {
   }
 
   get receiveLink(): string {
-    return this.signalingModule.getOwnSocketId;
+    return this.receiver.ownId;
+    // return this.signalingModule.ownId;
   }
 
   get downloadLink(): string {
@@ -44,19 +57,26 @@ export class RootStore {
   }
 
   createReceiveLink = (): void => {
-    this.signalingModule.connect();
+    this.receiver.refresh();
+    // this.signalingModule.waitInviteFromRemote();
   };
 
   connectToReceiver = (receiverLink: string): void => {
-    this.signalingModule.connectToRemote(receiverLink);
+    this.sender.connectToRemote(receiverLink);
+    // this.signalingModule.sendInviteToRemote(receiverLink);
   };
 
-  sendMessage = (message: string): void => {
-    this.signalingModule.sendToRemote(message);
+  sendMessageToSender = (message: string): void => {
+    // this.signalingModule.sendToRemote(message);
+    this.receiver.sendToRemote(message);
+  };
+
+  sendMessageToReceiver = (message: string): void => {
+    this.sender.send(message);
   };
 
   disconnectSignaling = (): void => {
-    this.signalingModule.disconnectSignaling();
+    this.signalingModule.disconnect();
   };
 
   sendInvite = (): void => {

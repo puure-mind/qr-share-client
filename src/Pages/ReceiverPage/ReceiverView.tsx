@@ -11,13 +11,12 @@ import {
   Typography,
 } from '@mui/material';
 import { QRCodeSVG } from 'qrcode.react';
-import { Link, useNavigate, createSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import React, { useContext, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import RootStoreContext, { RootContext } from '../../store/RootStoreProvider';
 
 export const ReceiverView: React.FC = observer(() => {
-  const navigate = useNavigate();
   const rootStore = useContext<RootContext>(RootStoreContext);
 
   if (rootStore === null) return <></>;
@@ -26,9 +25,8 @@ export const ReceiverView: React.FC = observer(() => {
 
   useEffect(() => {
     rootStore.createReceiveLink();
-    console.log('receiveLink created');
 
-    rootStore.waitInvite();
+    // rootStore.waitInvite();
 
     rootStore.waitFile();
 
@@ -40,21 +38,12 @@ export const ReceiverView: React.FC = observer(() => {
   const refreshLink = (): void => {
     rootStore.createReceiveLink();
 
-    rootStore.waitInvite();
-  };
-
-  const goToLink = (): void => {
-    navigate({
-      pathname: 'signaling',
-      search: createSearchParams({ id: rootStore.receiveLink }).toString(),
-    });
+    // rootStore.waitInvite();
   };
 
   const sendToRemote = (): void => {
-    rootStore.sendMessage('hello from receiver');
+    rootStore.sendMessageToSender('hello from receiver');
   };
-
-  console.log(rootStore.downloadProgress);
 
   return (
     <>
@@ -129,13 +118,6 @@ export const ReceiverView: React.FC = observer(() => {
                   flexGrow: 0.2,
                 }}
               >
-                <Button
-                  onClick={rootStore.waitFile}
-                  size='large'
-                  variant='contained'
-                >
-                  Go
-                </Button>
                 <Button
                   onClick={refreshLink}
                   size='large'

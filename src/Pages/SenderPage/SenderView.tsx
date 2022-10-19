@@ -41,14 +41,14 @@ export const SenderView = observer(() => {
   }, [receiverId, rootStore]);
 
   const sendToRemote = (): void => {
-    rootStore.sendMessage('hello from sender');
+    rootStore.sendMessageToReceiver('hello from sender');
   };
 
   const reconnect = (): void => {
     const receiver = getValues('receiver');
     if (receiver !== null) rootStore.connectToReceiver(receiver);
 
-    rtcConnect();
+    // rtcConnect();
   };
 
   const sendFile = (): void => {

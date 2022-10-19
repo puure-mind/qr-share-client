@@ -1,16 +1,28 @@
 import React, { createContext } from 'react';
 import { RootStore } from './rootStore';
-import { SignalingModule } from './modules/signaling/SignalingModule';
+import { SocketModule } from './modules/signaling/SocketModule';
 import { RtcModule } from './modules/rtc/RtcModule';
 import { FileStore } from './modules/file/fileStore';
+import { SenderCreator } from './modules/sender/SenderCreator';
+import { ReceiverCreator } from './modules/receiver/ReceiverCreator';
 
 export type RootContext = RootStore | null;
 
 // DI
-const signalingModule = new SignalingModule();
-const rtcModule = new RtcModule(signalingModule);
+const socketModule = new SocketModule();
+const rtcModule = new RtcModule(socketModule);
 const fileStore = new FileStore();
-const rootStore = new RootStore(signalingModule, rtcModule, fileStore);
+
+const senderCreator = new SenderCreator();
+const receiverCreator = new ReceiverCreator();
+
+const rootStore = new RootStore(
+  socketModule,
+  rtcModule,
+  fileStore,
+  senderCreator,
+  receiverCreator,
+);
 //
 
 interface Props {

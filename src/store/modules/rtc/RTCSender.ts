@@ -146,6 +146,10 @@ export class RTCSender {
   private readonly changeChannelStatus = (status: string): void => {
     this.channelStatus = status;
   };
+
+  sendToRemote = (msg: string): void => {
+    this.channel.send(msg);
+  };
 }
 
 class FlowControlledDataChannel {

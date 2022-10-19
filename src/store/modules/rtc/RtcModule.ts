@@ -1,15 +1,17 @@
-import { SignalingModule } from '../signaling/SignalingModule';
+import { signalingStatus, SocketModule } from '../signaling/SocketModule';
 import { makeAutoObservable, when } from 'mobx';
 import { RTCSender } from './RTCSender';
 import { RTCReceiver } from './RTCReceiver';
+import { ITransportLayer } from '../../interfaces/ITransportLayer';
 
-export class RtcModule {
+export class RtcModule implements ITransportLayer {
   private readonly signaling;
   private Sender: RTCSender;
   private Receiver: RTCReceiver;
 
-  constructor(signaling: SignalingModule) {
-    this.signaling = signaling;
+  constructor(socketModule: SocketModule) {
+    this.signaling = socketModule;
+
     this.Sender = new RTCSender();
     this.Receiver = new RTCReceiver();
 
@@ -127,5 +129,35 @@ export class RtcModule {
 
   saveFile = (): void => {
     void this.Receiver.createFileHandle();
+  };
+
+  disconnect = (): void => {
+    this.signaling.disconnect();
+  };
+
+  get getCurrentStatus(): signalingStatus {
+    return this.signaling.getCurrentStatus;
+  }
+
+  get ownId(): string {
+    return this.signaling.ownId;
+  }
+
+  sendInviteToRemote = (remoteId: string): void => {
+    this.signaling.sendInviteToRemote(remoteId);
+
+    void this.createInvite();
+  };
+
+  sendToRemote = (msg: string): void => {
+    // this.signaling.sendToRemote(msg);
+
+    this.Sender.sendToRemote(msg);
+  };
+
+  waitInviteFromRemote = (): void => {
+    this.signaling.waitInviteFromRemote();
+
+    this.waitInvite();
   };
 }

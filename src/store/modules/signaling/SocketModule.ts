@@ -1,5 +1,6 @@
 import { makeAutoObservable } from 'mobx';
 import { io, Socket } from 'socket.io-client';
+import { ITransportLayer } from '../../interfaces/ITransportLayer';
 
 export type signalingStatus =
   | 'connected'
@@ -7,50 +8,48 @@ export type signalingStatus =
   | 'loading'
   | 'waitOther';
 
-export class SignalingModule {
-  ownSocket: Socket = io('localhost:5005', { autoConnect: false });
+export class SocketModule implements ITransportLayer {
+  private readonly ownSocket: Socket = io('localhost:5005', {
+    autoConnect: false,
+  });
 
-  ownSocketId = '';
+  ownId = '';
   remoteSocketId = '';
 
-  status: signalingStatus = 'loading';
+  currentStatus: signalingStatus = 'loading';
 
   constructor() {
     makeAutoObservable(this);
   }
 
-  get getStatus(): signalingStatus {
-    return this.status;
-  }
-
-  get getOwnSocketId(): string {
-    return this.ownSocketId;
+  get getCurrentStatus(): signalingStatus {
+    return this.currentStatus;
   }
 
   // actions
-  connectToRemote = (remoteSocketId: string): void => {
+  sendInviteToRemote = (remoteSocketId: string): void => {
     this.connectSocket();
+
+    this.ownSocket.on('from receiver to sender', () => {
+      this.changeStatusTo('connected');
+    });
 
     this.setRemoteSocketId(remoteSocketId);
 
     this.ownSocket.emit('from sender to receiver', {
       receiver: remoteSocketId,
-      sender: this.ownSocketId,
-    });
-
-    this.ownSocket.on('from receiver to sender', () => {
-      this.changeSignalingStatusTo('connected');
+      sender: this.ownId,
     });
   };
 
-  connect = (): void => {
+  waitInviteFromRemote = (): void => {
     this.connectSocket();
 
     this.ownSocket.on('from sender to receiver', (data: string) => {
       this.setRemoteSocketId(data);
       this.ownSocket.emit('from receiver to sender', this.remoteSocketId);
 
-      this.changeSignalingStatusTo('connected');
+      this.changeStatusTo('connected');
     });
   };
 
@@ -77,11 +76,11 @@ export class SignalingModule {
     });
   };
 
-  disconnectSignaling = (): void => {
+  disconnect = (): void => {
     this.sendEventToRemote('socket closed');
 
     this.ownSocket.disconnect();
-    this.changeSignalingStatusTo('disconnected');
+    this.changeStatusTo('disconnected');
 
     this.ownSocket.removeAllListeners();
   };
@@ -89,42 +88,40 @@ export class SignalingModule {
 
   private readonly connectSocket = (): void => {
     this.subscribeTo('socket closed', () => {
-      this.disconnectSignaling();
+      this.disconnect();
+    });
+
+    this.subscribeTo('connect', () => {
+      this.setOwnId(this.ownSocket.id);
+      console.log(this.ownId);
+      this.changeStatusTo('waitOther');
+    });
+
+    this.subscribeTo('disconnect', () => {
+      this.changeStatusTo('disconnected');
+
+      // // reconnect
+      // setTimeout(() => {
+      //   this.ownSocket?.connect();
+      // }, 5000);
     });
 
     if (this.ownSocket.connected) {
-      this.disconnectSignaling();
+      this.disconnect();
     }
-
     this.ownSocket?.connect();
 
-    this.ownSocket.on('connect', () => {
-      this.setOwnSocketId(this.ownSocket.id);
-
-      this.changeSignalingStatusTo('waitOther');
-    });
-
-    this.ownSocket.on('disconnect', () => {
-      this.changeSignalingStatusTo('disconnected');
-
-      setTimeout(() => {
-        this.ownSocket?.connect();
-      }, 5000);
-    });
-
-    this.ownSocket.on('msg to socket', (data: string) => {
+    this.subscribeTo('msg to socket', (data) => {
       console.log(data);
     });
   };
 
-  private readonly setOwnSocketId = (id: string): void => {
-    this.ownSocketId = id;
+  private readonly setOwnId = (id: string): void => {
+    this.ownId = id;
   };
 
-  private readonly changeSignalingStatusTo = (
-    status: signalingStatus,
-  ): void => {
-    this.status = status;
+  private readonly changeStatusTo = (status: signalingStatus): void => {
+    this.currentStatus = status;
   };
 
   private readonly setRemoteSocketId = (id: string): void => {
