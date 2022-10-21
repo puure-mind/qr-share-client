@@ -1,5 +1,6 @@
 import { getRtcServers } from '../../../config/rtc';
 import { makeAutoObservable } from 'mobx';
+import { FileMeta } from '../file/FileModule';
 
 export class RTCReceiver {
   peer = new RTCPeerConnection();
@@ -7,14 +8,14 @@ export class RTCReceiver {
   channel = this.peer.createDataChannel('init');
 
   downloadUrl = '';
-  fileParams: any = {};
-  chunks: any[] = [];
+
   progress = 0;
 
   fileHandle: FileSystemFileHandle | null = null;
   writer: FileSystemWritableFileStream | null = null;
 
   candidates: RTCIceCandidate[] = [];
+  private remoteFileMeta: FileMeta | null = null;
 
   constructor() {
     this.peer = new RTCPeerConnection({ iceServers: [...getRtcServers()] });
@@ -35,13 +36,17 @@ export class RTCReceiver {
     makeAutoObservable(this);
   }
 
+  get getFileMeta(): FileMeta | null {
+    return this.remoteFileMeta;
+  }
+
   get getProgress(): number {
     return this.progress;
   }
 
-  createFileHandle = async (): Promise<void> => {
-    this.fileHandle = await showSaveFilePicker();
-    this.writer = await this.fileHandle.createWritable();
+  downloadFile = async (): Promise<void> => {
+    await this.createFileHandle();
+    this.requestFileChunks();
   };
 
   createAnswer = async (offer: RTCSessionDescriptionInit): Promise<void> => {
@@ -53,6 +58,17 @@ export class RTCReceiver {
   addIceCandidate = (candidate: RTCIceCandidate): void => {
     console.log(candidate);
     void this.peer.addIceCandidate(candidate);
+  };
+
+  private readonly createFileHandle = async (): Promise<void> => {
+    this.fileHandle = await showSaveFilePicker({
+      suggestedName: this.remoteFileMeta?.fileName,
+    });
+    this.writer = await this.fileHandle.createWritable();
+  };
+
+  private readonly requestFileChunks = (): void => {
+    this.channel.send(JSON.stringify({ command: 'ready' }));
   };
 
   private readonly createChannel = (channel: RTCDataChannel): void => {
@@ -74,43 +90,45 @@ export class RTCReceiver {
     msg: MessageEvent<string>,
   ): Promise<void> => {
     const { data } = msg;
-    const object = JSON.parse(data);
-    if (object.command === 'start') {
-      this.setFileParams(object.payload);
-      this.chunks = [];
-      this.setProgress(0);
-      console.log(this.fileParams);
-    }
-    if (object.command === 'chunk') {
-      if (this.writer !== null) {
-        await this.writeChunkToFile(this.writer, object.payload.data);
+    const { command, payload } = JSON.parse(data);
+
+    switch (command) {
+      case 'start': {
+        this.setFileMeta(payload);
+
+        break;
+      }
+      case 'chunk': {
+        const chunk: Int8Array = new Int8Array(Object.values(payload.data));
+
+        await this.writeChunkToFile(chunk);
+        console.log(chunk);
+        break;
+      }
+      case 'end': {
+        console.log('closing');
+        await this.closeFile();
+        this.clearFileMeta();
+        break;
       }
     }
-    if (object.command === 'end') {
-      if (this.writer !== null && this.fileHandle !== null) {
-        await this.closeFile(this.writer, this.fileHandle);
-      }
-    }
+  };
+
+  private readonly setFileMeta = (fileMeta: FileMeta | null): void => {
+    this.remoteFileMeta = fileMeta;
+    console.log(this.remoteFileMeta);
   };
 
   private readonly writeChunkToFile = async (
-    writer: FileSystemWritableFileStream,
-    chunk: any,
+    chunk: Int8Array,
   ): Promise<void> => {
-    console.log(chunk);
-    const buffer = new Int8Array(Object.values(chunk));
-    await writer.write(buffer);
-    console.log('writed');
+    await this.writer?.write(chunk);
   };
 
-  private readonly closeFile = async (
-    writer: FileSystemWritableFileStream,
-    handle: FileSystemFileHandle,
-  ): Promise<void> => {
-    await writer.close();
-    const file = await handle.getFile();
+  private readonly closeFile = async (): Promise<void> => {
+    await this.writer?.close();
+    const file = await this.fileHandle?.getFile();
 
-    console.log(handle);
     console.log(file);
   };
 
@@ -118,7 +136,7 @@ export class RTCReceiver {
     this.progress = loaded;
   };
 
-  private readonly setFileParams = (params: object): void => {
-    this.fileParams = params;
+  private readonly clearFileMeta = (): void => {
+    this.setFileMeta(null);
   };
 }

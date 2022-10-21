@@ -1,6 +1,7 @@
 import { makeAutoObservable } from 'mobx';
 import { io, Socket } from 'socket.io-client';
 import { ITransportLayer } from '../../interfaces/ITransportLayer';
+import { FileMeta } from '../file/FileModule';
 
 export type signalingStatus =
   | 'connected'
@@ -20,6 +21,16 @@ export class SocketModule implements ITransportLayer {
 
   constructor() {
     makeAutoObservable(this);
+  }
+
+  downloadFile = (): void => {
+    console.log('downloading...');
+  };
+
+  sendBytes = (bytes: Int8Array): void => console.log('send bytes');
+
+  get getFileMeta(): FileMeta | null {
+    return null;
   }
 
   get getCurrentStatus(): signalingStatus {
@@ -127,5 +138,9 @@ export class SocketModule implements ITransportLayer {
 
   private readonly setRemoteSocketId = (id: string): void => {
     this.remoteSocketId = id;
+  };
+
+  sendFile = (file: File): void => {
+    console.log(file);
   };
 }

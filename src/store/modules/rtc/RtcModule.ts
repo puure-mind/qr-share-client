@@ -3,6 +3,7 @@ import { makeAutoObservable, when } from 'mobx';
 import { RTCSender } from './RTCSender';
 import { RTCReceiver } from './RTCReceiver';
 import { ITransportLayer } from '../../interfaces/ITransportLayer';
+import { FileMeta } from '../file/FileModule';
 
 export class RtcModule implements ITransportLayer {
   private readonly signaling;
@@ -28,6 +29,10 @@ export class RtcModule implements ITransportLayer {
 
   get downloadUrl(): string {
     return this.Receiver.downloadUrl;
+  }
+
+  get getFileMeta(): FileMeta | null {
+    return this.Receiver.getFileMeta;
   }
 
   createInvite = async (): Promise<void> => {
@@ -127,8 +132,8 @@ export class RtcModule implements ITransportLayer {
     );
   };
 
-  saveFile = (): void => {
-    void this.Receiver.createFileHandle();
+  downloadFile = async (): Promise<void> => {
+    await this.Receiver.downloadFile();
   };
 
   disconnect = (): void => {
@@ -159,5 +164,9 @@ export class RtcModule implements ITransportLayer {
     this.signaling.waitInviteFromRemote();
 
     this.waitInvite();
+  };
+
+  sendFile = (file: File): void => {
+    void this.Sender.sendFile(file);
   };
 }

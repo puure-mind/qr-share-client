@@ -4,15 +4,15 @@ import {
   signalingStatus,
 } from './modules/signaling/SocketModule';
 import { RtcModule } from './modules/rtc/RtcModule';
-import { FileStore } from './modules/file/fileStore';
 import { SenderCreator } from './modules/sender/SenderCreator';
 import { ReceiverCreator } from './modules/receiver/ReceiverCreator';
 import { IReceiver } from './modules/receiver/Receiver';
 import { ISender } from './modules/sender/Sender';
+import { FileMeta, FileModule } from './modules/file/FileModule';
 
 export class RootStore {
   rtcModule: RtcModule;
-  fileStore: FileStore;
+  fileModule: FileModule;
 
   signalingModule: SocketModule;
   sender: ISender;
@@ -21,7 +21,7 @@ export class RootStore {
   constructor(
     signalingModule: SocketModule,
     rtcModule: RtcModule,
-    fileStore: FileStore,
+    fileModule: FileModule,
     senderCreator: SenderCreator,
     receiverCreator: ReceiverCreator,
   ) {
@@ -29,10 +29,14 @@ export class RootStore {
 
     this.signalingModule = signalingModule;
     this.rtcModule = rtcModule;
-    this.fileStore = fileStore;
+    this.fileModule = fileModule;
 
     this.sender = senderCreator.createSender(this.rtcModule);
     this.receiver = receiverCreator.createReceiver(this.rtcModule);
+  }
+
+  get downloadableFile(): FileMeta | null {
+    return this.receiver.getRemoteFileMeta;
   }
 
   get signalingStatus(): signalingStatus {
@@ -45,7 +49,6 @@ export class RootStore {
 
   get receiveLink(): string {
     return this.receiver.ownId;
-    // return this.signalingModule.ownId;
   }
 
   get downloadLink(): string {
@@ -58,17 +61,10 @@ export class RootStore {
 
   createReceiveLink = (): void => {
     this.receiver.refresh();
-    // this.signalingModule.waitInviteFromRemote();
   };
 
   connectToReceiver = (receiverLink: string): void => {
     this.sender.connectToRemote(receiverLink);
-    // this.signalingModule.sendInviteToRemote(receiverLink);
-  };
-
-  sendMessageToSender = (message: string): void => {
-    // this.signalingModule.sendToRemote(message);
-    this.receiver.sendToRemote(message);
   };
 
   sendMessageToReceiver = (message: string): void => {
@@ -79,22 +75,10 @@ export class RootStore {
     this.signalingModule.disconnect();
   };
 
-  sendInvite = (): void => {
-    void this.rtcModule.createInvite();
-  };
-
-  waitInvite = (): void => {
-    this.rtcModule.waitInvite();
-  };
-
   sendFile = (files: File[]): void => {
     if (files?.length !== 0) {
-      void this.fileStore.sendFile(files[0], this.rtcModule);
+      this.sender.sendFile(files[0]);
     }
-  };
-
-  downloadFile = (): void => {
-    this.fileStore.downloadFile(this.downloadLink, 'download.txt');
   };
 
   openDialog = async (): Promise<void> => {
@@ -103,21 +87,9 @@ export class RootStore {
     const data = await fileHandle.getFile();
     const buffer = await data.arrayBuffer();
     console.log(buffer);
-
-    this.signalingModule.sendEventToRemote<ArrayBuffer>(
-      'transfer file',
-      buffer,
-    );
   };
 
-  waitFile = (): void => {
-    this.signalingModule.subscribeTo<ArrayBuffer>('transfer file', (bytes) => {
-      console.log('event received');
-      this.fileStore.downloadFileFromBytes(new Int8Array(bytes));
-    });
-  };
-
-  saveFile = (): void => {
-    this.rtcModule.saveFile();
+  downloadFile = (): void => {
+    this.receiver.downloadFile();
   };
 }

@@ -27,13 +27,8 @@ export const SenderView = observer(() => {
   });
   if (rootStore === null) return <></>;
 
-  const rtcConnect = (): void => {
-    rootStore.sendInvite();
-  };
-
   useEffect(() => {
     receiverId !== null && rootStore.connectToReceiver(receiverId);
-    // rtcConnect();
 
     return () => {
       rootStore.disconnectSignaling();
@@ -47,13 +42,11 @@ export const SenderView = observer(() => {
   const reconnect = (): void => {
     const receiver = getValues('receiver');
     if (receiver !== null) rootStore.connectToReceiver(receiver);
-
-    // rtcConnect();
   };
 
   const sendFile = (): void => {
     const files = getValues('files');
-    rootStore.sendFile(files);
+    void rootStore.sendFile(files);
   };
 
   return (

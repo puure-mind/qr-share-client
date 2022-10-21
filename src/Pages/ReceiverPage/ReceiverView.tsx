@@ -25,10 +25,6 @@ export const ReceiverView: React.FC = observer(() => {
   useEffect(() => {
     rootStore.createReceiveLink();
 
-    // rootStore.waitInvite();
-
-    rootStore.waitFile();
-
     return () => {
       rootStore.disconnectSignaling();
     };
@@ -36,12 +32,6 @@ export const ReceiverView: React.FC = observer(() => {
 
   const refreshLink = (): void => {
     rootStore.createReceiveLink();
-
-    // rootStore.waitInvite();
-  };
-
-  const sendToRemote = (): void => {
-    rootStore.sendMessageToSender('hello from receiver');
   };
 
   return (
@@ -124,10 +114,9 @@ export const ReceiverView: React.FC = observer(() => {
               >
                 Refresh
               </Button>
-              <Button onClick={sendToRemote} size='large' variant='contained'>
-                send msg
-              </Button>
-              <Button onClick={rootStore.saveFile}>save</Button>
+              {rootStore.downloadableFile !== null && (
+                <Button onClick={rootStore.downloadFile}>save</Button>
+              )}
             </CardActions>
           </Card>
         </Box>

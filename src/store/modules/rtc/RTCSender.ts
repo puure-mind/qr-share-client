@@ -1,5 +1,11 @@
 import { getRtcServers } from '../../../config/rtc';
 import { makeAutoObservable, when } from 'mobx';
+import {
+  FileChunk,
+  FileMeta,
+  FileModule,
+  ProcessedFile,
+} from '../file/FileModule';
 
 export class RTCSender {
   peer = new RTCPeerConnection();
@@ -9,6 +15,9 @@ export class RTCSender {
 
   channelStatus = 'init';
 
+  fileModule: FileModule;
+  private processedFile: ProcessedFile | null = null;
+
   constructor() {
     this.peer = new RTCPeerConnection({ iceServers: [...getRtcServers()] });
 
@@ -16,6 +25,7 @@ export class RTCSender {
     void this.peer.createOffer().then((sdp) => {
       this.setPeerDescription(sdp);
     });
+    this.fileModule = new FileModule();
 
     makeAutoObservable(this);
   }
@@ -54,7 +64,13 @@ export class RTCSender {
     void this.sendRecurs(chunks);
   };
 
-  sendRecurs = async (chunks: any[]): Promise<void> => {
+  startSendingFile = async (): Promise<void> => {
+    if (this.processedFile?.chunks != null) {
+      await this.sendRecurs(this.processedFile?.chunks);
+    }
+  };
+
+  sendRecurs = async (chunks: FileChunk[]): Promise<void> => {
     let i = 0;
     const fcdc = new FlowControlledDataChannel(this.channel);
 
@@ -73,38 +89,16 @@ export class RTCSender {
     await fcdc.readyProm;
 
     fcdc.execute(() => {
-      this.sendEnded();
+      this.fileSendingEnded();
     });
   };
 
-  sendToChannel = async (
-    fcdc: FlowControlledDataChannel,
-    chunks: any[],
-    startIndex: number,
-    endIndex: number,
-  ): Promise<void> => {
-    console.log('paused: ', fcdc.paused, ' ready: ', fcdc.ready);
-    if (fcdc.ready) {
-      fcdc.execute(() => {
-        this.sendChunk(chunks[startIndex]);
-      });
-      const nextIndex = startIndex + 1;
-      if (nextIndex < endIndex) {
-        await this.sendToChannel(fcdc, chunks, nextIndex, endIndex);
-      } else {
-        this.sendEnded();
-      }
-    } else {
-      void this.sendToChannel(fcdc, chunks, startIndex, endIndex);
-    }
-  };
-
-  sendEnded = (): void => {
+  fileSendingEnded = (): void => {
     this.channel.send(JSON.stringify({ command: 'end' }));
     console.log('ended');
   };
 
-  sendChunk = (chunk: any): void => {
+  sendChunk = (chunk: FileChunk): void => {
     const chunkObject = {
       command: 'chunk',
       payload: chunk,
@@ -139,7 +133,19 @@ export class RTCSender {
     console.log('channel close');
   };
 
-  private readonly onChannelMessage = (msg: MessageEvent<Int8Array>): void => {
+  private readonly onChannelMessage = async (
+    msg: MessageEvent<string>,
+  ): Promise<void> => {
+    const { data } = msg;
+    const { command } = JSON.parse(data);
+
+    switch (command) {
+      case 'ready': {
+        await this.startSendingFile();
+        break;
+      }
+    }
+
     console.log(msg.data);
   };
 
@@ -149,6 +155,18 @@ export class RTCSender {
 
   sendToRemote = (msg: string): void => {
     this.channel.send(msg);
+  };
+
+  sendFile = async (file: File): Promise<void> => {
+    this.processedFile = await this.fileModule.processFile(file);
+
+    this.sendFileMeta(this.processedFile.meta);
+
+    console.log(this.processedFile);
+  };
+
+  private readonly sendFileMeta = (meta: FileMeta): void => {
+    this.channel.send(JSON.stringify({ command: 'start', payload: meta }));
   };
 }
 
