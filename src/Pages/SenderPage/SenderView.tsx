@@ -35,10 +35,6 @@ export const SenderView = observer(() => {
     };
   }, [receiverId, rootStore]);
 
-  const sendToRemote = (): void => {
-    rootStore.sendMessageToReceiver('hello from sender');
-  };
-
   const reconnect = (): void => {
     const receiver = getValues('receiver');
     if (receiver !== null) rootStore.connectToReceiver(receiver);
@@ -77,7 +73,6 @@ export const SenderView = observer(() => {
         >
           <CardContent>
             <Box>
-              <Typography>{rootStore.signalingStatus}</Typography>
               <Typography>{rootStore.rtcStatus}</Typography>
             </Box>
             <Box
@@ -115,16 +110,15 @@ export const SenderView = observer(() => {
             />
           </CardContent>
           <CardActions>
-            <Button onClick={sendToRemote}>Send msg</Button>
             <Button onClick={sendFile}>Send file</Button>
-            <Button
-              variant='contained'
-              onClick={() => {
-                void rootStore?.openDialog();
-              }}
-            >
-              open
-            </Button>
+            {/* <Button */}
+            {/*  variant='contained' */}
+            {/*  onClick={() => { */}
+            {/*    void rootStore?.openDialog(); */}
+            {/*  }} */}
+            {/* > */}
+            {/*  open */}
+            {/* </Button> */}
           </CardActions>
         </Card>
       </Container>

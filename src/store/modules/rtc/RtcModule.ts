@@ -4,6 +4,8 @@ import { RTCSender } from './RTCSender';
 import { RTCReceiver } from './RTCReceiver';
 import { ITransportLayer } from '../../interfaces/ITransportLayer';
 import { FileMeta } from '../file/FileModule';
+import { ClientType } from '../../interfaces/ClientType';
+import { TransportType } from '../../interfaces/TransportType';
 
 export class RtcModule implements ITransportLayer {
   private readonly signaling;
@@ -168,5 +170,15 @@ export class RtcModule implements ITransportLayer {
 
   sendFile = (file: File): void => {
     void this.Sender.sendFile(file);
+  };
+
+  getConnectionTypeAs = async (client: ClientType): Promise<TransportType> => {
+    if (client === 'Sender') {
+      // return await this.Sender.getConnectionType();
+      return 'host';
+    }
+
+    // return await this.Receiver.getConnectionType();
+    return 'host';
   };
 }

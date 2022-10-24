@@ -1,6 +1,7 @@
 import { getRtcServers } from '../../../config/rtc';
 import { makeAutoObservable } from 'mobx';
 import { FileMeta } from '../file/FileModule';
+import { TransportType } from '../../interfaces/TransportType';
 
 export class RTCReceiver {
   peer = new RTCPeerConnection();
@@ -43,6 +44,16 @@ export class RTCReceiver {
   get getProgress(): number {
     return this.progress;
   }
+
+  getConnectionType = async (): Promise<TransportType> => {
+    await this.peer.getStats(null).then((stats) => {
+      stats.forEach((report) => {
+        console.log(report.name);
+      });
+    });
+
+    return await new Promise<TransportType>((resolve) => resolve('host'));
+  };
 
   downloadFile = async (): Promise<void> => {
     await this.createFileHandle();

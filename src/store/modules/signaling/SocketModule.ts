@@ -10,9 +10,16 @@ export type signalingStatus =
   | 'waitOther';
 
 export class SocketModule implements ITransportLayer {
-  private readonly ownSocket: Socket = io('localhost:5005', {
-    autoConnect: false,
-  });
+  // private readonly ownSocket: Socket = io('localhost:5005', {
+  //   autoConnect: false,
+  // });
+
+  private readonly ownSocket: Socket = io(
+    'https://qr-share-server.herokuapp.com/',
+    {
+      autoConnect: false,
+    },
+  );
 
   ownId = '';
   remoteSocketId = '';

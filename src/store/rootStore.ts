@@ -9,6 +9,8 @@ import { ReceiverCreator } from './modules/receiver/ReceiverCreator';
 import { IReceiver } from './modules/receiver/Receiver';
 import { ISender } from './modules/sender/Sender';
 import { FileMeta, FileModule } from './modules/file/FileModule';
+import { TransportType } from './interfaces/TransportType';
+import { ClientType } from './interfaces/ClientType';
 
 export class RootStore {
   rtcModule: RtcModule;
@@ -58,6 +60,10 @@ export class RootStore {
   get downloadProgress(): number {
     return this.rtcModule.getProgress;
   }
+
+  getTransportTypeAs = async (client: ClientType): Promise<TransportType> => {
+    return await this.rtcModule.getConnectionTypeAs(client);
+  };
 
   createReceiveLink = (): void => {
     this.receiver.refresh();
