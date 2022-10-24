@@ -21,7 +21,9 @@ jobs:
           usedocker: true
           docker_build_args: |
             NODE_ENV
-            TURN_CREDENTIALS_ARG
+            TURN_CREDENTIAL_ARG
+            TURN_USER_ARG
         env:
           NODE_ENV: production
-          TURN_CREDENTIALS_ARG: ${{secrets.TURN_CREDENTIALS_ARG}}
+          TURN_CREDENTIAL_ARG: ${{secrets.TURN_CREDENTIAL_ARG}}
+          TURN_USER_ARG: ${{secrets.TURN_USER_ARG}}
