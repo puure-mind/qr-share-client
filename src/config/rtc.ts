@@ -7,6 +7,7 @@ interface RtcServer {
 type RtcServers = RtcServer[];
 
 export const getRtcServers = (): RtcServers => {
+  console.log(process.env.REACT_APP_TEST);
   console.log(process.env.REACT_APP_TURN_CREDENTIALS);
   const turnCredentials = process.env.REACT_APP_TURN_CREDENTIALS;
   let turn = { urls: 'turn:test.posterc.kz:3478' };

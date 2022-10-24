@@ -22,6 +22,8 @@ jobs:
           docker_build_args: |
             NODE_ENV
             TURN_CREDENTIALS_ARG
+            TEST_ARG
         env:
           NODE_ENV: production
           TURN_CREDENTIALS_ARG: ${{secrets.TURN_CREDENTIALS_ARG}}
+          TEST_ARG: ${{TEST_ARG}}
