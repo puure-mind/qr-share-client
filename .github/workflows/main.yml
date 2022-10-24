@@ -21,7 +21,7 @@ jobs:
           usedocker: true
           docker_build_args: |
             NODE_ENV
-            REACT_APP_TURN_CREDENTIALS
+            TURN_CREDENTIALS_ARG
         env:
           NODE_ENV: production
-          REACT_APP_TURN_CREDENTIALS: ${{secrets.TURN_CREDENTIALS}}
+          TURN_CREDENTIALS_ARG: ${{secrets.TURN_CREDENTIALS_ARG}}
