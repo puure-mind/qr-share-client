@@ -15,12 +15,14 @@ import React, { useContext, useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import RootStoreContext, { RootContext } from '../../store/RootStoreProvider';
 
+const baseUrl = window.location.href;
+
 export const ReceiverView: React.FC = observer(() => {
   const rootStore = useContext<RootContext>(RootStoreContext);
 
   if (rootStore === null) return <></>;
 
-  const receiverLink = `signaling?id=${rootStore.receiveLink}`;
+  const receiverLink = `${baseUrl}/signaling?id=${rootStore.receiveLink}`;
 
   useEffect(() => {
     rootStore.createReceiveLink();
@@ -73,7 +75,7 @@ export const ReceiverView: React.FC = observer(() => {
               sx={{ flexGrow: 0.7, pt: 1, width: 1, height: 0.7 }}
             >
               <QRCodeSVG
-                value={rootStore.receiveLink}
+                value={receiverLink}
                 style={{
                   width: '100%',
                   height: '100%',
