@@ -7,6 +7,14 @@ import {
   ProcessedFile,
 } from '../file/FileModule';
 
+export interface IConnectionStats {
+  rtcPair: any | null;
+  remoteCandidateId: any | null;
+  localCandidateId: any | null;
+  remoteType: any | null;
+  localType: any | null;
+}
+
 export class RTCSender {
   peer = new RTCPeerConnection();
   offer: RTCSessionDescriptionInit | null = null;
@@ -126,6 +134,49 @@ export class RTCSender {
   private readonly onChannelOpen = (): void => {
     this.changeChannelStatus('connected');
     console.log('channel open');
+
+    void this.peer.getStats(null).then((stats) => {
+      const connectionStats = this.getConnectionTypeFromStats(stats);
+      console.log(connectionStats);
+    });
+  };
+
+  private readonly getConnectionTypeFromStats = (
+    stats: RTCStatsReport,
+  ): IConnectionStats => {
+    let rtcPair: any | null = null;
+    let remoteCandidateId: any | null = null;
+    let localCandidateId: any | null = null;
+    let remoteType: any | null = null;
+    let localType: any | null = null;
+
+    stats.forEach((res) => {
+      if (res.state === 'succeeded') {
+        rtcPair = res;
+      }
+    });
+
+    if (rtcPair !== null) {
+      remoteCandidateId = rtcPair.remoteCandidateId;
+      localCandidateId = rtcPair.localCandidateId;
+
+      stats.forEach((res) => {
+        if (res.id === remoteCandidateId) {
+          remoteType = res.candidateType;
+        }
+        if (res.id === localCandidateId) {
+          localType = res.candidateType;
+        }
+      });
+    }
+
+    return {
+      rtcPair,
+      remoteCandidateId,
+      localCandidateId,
+      remoteType,
+      localType,
+    };
   };
 
   private readonly onChannelClose = (): void => {

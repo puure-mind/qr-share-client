@@ -22,7 +22,11 @@ export const ReceiverView: React.FC = observer(() => {
 
   if (rootStore === null) return <></>;
 
-  const receiverLink = `${baseUrl}/signaling?id=${rootStore.receiveLink}`;
+  const absoluteLink = `${baseUrl}signaling?id=${rootStore.receiveLink}`;
+  const relativeLink = `/signaling?id=${rootStore.receiveLink}`;
+
+  console.log(baseUrl);
+  console.log(absoluteLink);
 
   useEffect(() => {
     rootStore.createReceiveLink();
@@ -75,7 +79,7 @@ export const ReceiverView: React.FC = observer(() => {
               sx={{ flexGrow: 0.7, pt: 1, width: 1, height: 0.7 }}
             >
               <QRCodeSVG
-                value={receiverLink}
+                value={absoluteLink}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -86,7 +90,7 @@ export const ReceiverView: React.FC = observer(() => {
               <Typography>{rootStore.signalingStatus}</Typography>
               <Typography variant='h4' textAlign='center'>
                 personal link:
-                <Link to={receiverLink}>{rootStore.receiveLink}</Link>
+                <Link to={relativeLink}>{rootStore.receiveLink}</Link>
               </Typography>
               {rootStore.downloadLink !== '' && (
                 <Typography>
